@@ -4,10 +4,12 @@ import dev.edwlopez.microservices.storage_service.entity.Product;
 import dev.edwlopez.microservices.storage_service.repository.ProductRepository;
 import dev.edwlopez.microservices.storage_service.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.stream.Stream;
 
+@Service
 public class ImplProductService implements ProductService {
     @Autowired
     private ProductRepository repo;
@@ -35,5 +37,10 @@ public class ImplProductService implements ProductService {
     @Override
     public void deleteById(Long aLong) {
         repo.deleteById(aLong);
+    }
+
+    @Override
+    public Product update(Product entity) {
+        return repo.save(entity);
     }
 }

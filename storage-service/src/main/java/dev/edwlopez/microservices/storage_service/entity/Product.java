@@ -35,5 +35,5 @@ public class Product {
     private Double stock;
 
     @Column(name = "estado")
-    private Character state = 'Y';
+    private String state = "Y";
 }
