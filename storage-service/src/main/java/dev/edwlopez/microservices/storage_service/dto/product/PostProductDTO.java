@@ -12,31 +12,31 @@ import lombok.*;
 @ToString
 @Builder
 public class PostProductDTO {
-    @JsonAlias("id_pro")
-    private Long id;
     @NotBlank
+    @NotNull
     @Size(min = 4, max = 100)
     @JsonAlias("nom_pro")
     private String name;
-    @NotBlank
+    @NotNull
     @DecimalMin("0.10")
     @DecimalMax("999999.99")
     @JsonAlias("pre_pro")
     private Double price;
-    @NotBlank
+    @NotNull
     @JsonAlias("id_uni")
     private Long unitId;
-    @NotBlank
+    @NotNull
     @JsonAlias("id_marca")
     private Long marcaId;
-    @NotBlank
+    @NotNull
     @JsonAlias("id_cat")
     private Long categoryId;
+    @NotNull
     @DecimalMin("0.10")
     @DecimalMax("999999.99")
     @JsonAlias("stk_pro")
     private Double stock;
-    @Pattern(regexp = "^[yn]$")
+    @Pattern(regexp = "^[ynYN]$")
     @JsonAlias("estado")
     @Size(min = 1, max = 1)
     private String state = "Y";
@@ -44,7 +44,6 @@ public class PostProductDTO {
     public static PostProductDTO fromEntity (Product product) {
         var dto = new PostProductDTO();
 
-        dto.id = product.getId();
         dto.name = product.getName();
         dto.stock = product.getStock();
         dto.price = product.getPrice();
@@ -61,7 +60,6 @@ public class PostProductDTO {
 
         dto.setName(this.name);
         dto.setStock(this.stock);
-        dto.setId(this.id);
         dto.setPrice(this.price);
         dto.setUnitId(this.unitId);
         dto.setMarcaId(this.marcaId);
@@ -74,7 +72,6 @@ public class PostProductDTO {
     public Product toEntity () {
         var entity = new Product();
 
-        entity.setId(this.id);
         entity.setName(this.name);
         entity.setStock(this.stock);
         entity.setPrice(this.price);

@@ -1,15 +1,27 @@
 package dev.edwlopez.microservices.storage_service.controller;
 
+import com.netflix.discovery.converters.Auto;
 import dev.edwlopez.microservices.storage_service.dto.ProductDTO;
 import dev.edwlopez.microservices.storage_service.dto.product.ListProductDTO;
+import dev.edwlopez.microservices.storage_service.dto.product.PostProductDTO;
 import dev.edwlopez.microservices.storage_service.dto.product.PutProductDTO;
 import dev.edwlopez.microservices.storage_service.entity.Product;
+import dev.edwlopez.microservices.storage_service.entity.ProductImage;
+import dev.edwlopez.microservices.storage_service.service.ProductImageService;
 import dev.edwlopez.microservices.storage_service.service.ProductService;
+import dev.edwlopez.microservices.storage_service.service.aws.S3Service;
+import dev.edwlopez.microservices.storage_service.service.impl.ImplS3Service;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -39,7 +51,7 @@ public class ProductController {
     }
 
     @PostMapping
-    public ProductDTO createProduct (@Valid @RequestBody ProductDTO dto) {
+    public ProductDTO createProduct (@Valid @RequestBody PostProductDTO dto) {
         var res = service.create(dto.toEntity());
 
         return ProductDTO.fromEntity(res);
