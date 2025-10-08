@@ -4,6 +4,6 @@ RUN mkdir /opt/app
 
 WORKDIR /opt/app
 
-COPY dists/product-api-21-v3.jar app.jar
+COPY dists/product-api-21-v4.jar app.jar
 
 CMD ["java", "-jar", "app.jar"]
