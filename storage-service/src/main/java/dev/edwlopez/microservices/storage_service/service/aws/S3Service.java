@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 
-public interface S3Service {
+public interface S3Service extends S3PresignedResources {
     String createBucket(String bucketName);
     boolean checkIfBucketExist (String bucketName);
     List<String> getAllBuckets();

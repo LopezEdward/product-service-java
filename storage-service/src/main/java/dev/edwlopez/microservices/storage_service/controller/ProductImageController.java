@@ -4,14 +4,21 @@ import dev.edwlopez.microservices.storage_service.entity.ProductImage;
 import dev.edwlopez.microservices.storage_service.service.ProductImageService;
 import dev.edwlopez.microservices.storage_service.service.aws.S3Service;
 import dev.edwlopez.microservices.storage_service.service.impl.ImplS3Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.LoggerFactoryFriend;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("api/v1/products/image")
@@ -28,8 +35,10 @@ public class ProductImageController {
     @Autowired
     private S3Service s3Service;
 
+    private static Logger log = LoggerFactory.getLogger("ROOT");
+
     @PostMapping()
-    public ResponseEntity<?> uploadProductImage (
+    public ResponseEntity<?> createProductImage (
             @RequestParam("pId") Long productId,
             @RequestParam String key,
             @RequestPart MultipartFile file) throws IOException {
@@ -62,14 +71,22 @@ public class ProductImageController {
         }
     }
 
-    /*@GetMapping("/image")
+    @GetMapping()
     public ResponseEntity<?> downloadFile (
-            @RequestParam("p_id") Long productId
+            @RequestParam("pId") Long productId
     ) {
-        try {
+           var entStream = imgService.getAll().filter(productImage -> Objects.equals(productImage.getId(), productId)).toList();
+           var urlList = new ArrayList<String>(entStream.size());
 
-        } catch (IOException ex) {
+           for (var item: entStream) {
+               try {
+                   var url = s3Service.getTemporalViewURLToResource(this.defaultBucket, item.getKey(), Duration.ofSeconds(5));
+                   urlList.add(url);
+               } catch (IOException ex) {
+                   log.error("Error al obtener URL para el recurso '" + item.getKey() + "'", ex);
+               }
+           }
 
-        }
-    }*/
+           return ResponseEntity.ok(urlList);
+    }
 }

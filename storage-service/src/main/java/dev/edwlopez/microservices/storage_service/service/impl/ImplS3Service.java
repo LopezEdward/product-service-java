@@ -2,6 +2,7 @@ package dev.edwlopez.microservices.storage_service.service.impl;
 
 import dev.edwlopez.microservices.storage_service.repository.ProductImageRepository;
 import dev.edwlopez.microservices.storage_service.service.aws.S3Service;
+import dev.edwlopez.microservices.storage_service.types.Tuple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,21 +12,31 @@ import software.amazon.awssdk.services.s3.model.Bucket;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ImplS3Service implements S3Service {
     @Autowired
     private S3Client s3Client;
 
+    @Autowired
+    private S3Presigner s3signer;
+
     @Value("${spring.destination.folder}")
     private String destinationFolder;
+
+    private Map<String, Tuple<String, Instant>> keyUrlMap = new HashMap<>(10);
 
     @Override
     public String createBucket(String bucketName) {
@@ -116,5 +127,52 @@ public class ImplS3Service implements S3Service {
     @Override
     public String generatePresignedDownloadURL(String bucketName, String key, Duration duration) {
         return "";
+    }
+
+    @Override
+    public String getTemporalViewURLToResource(String bucketName, String key, Duration duration) throws IOException {
+        return regenerateTemporalResourceURL(key, bucketName, duration);
+    }
+
+    private boolean isAvailableTemporalResourceURL (String key) {
+        if (!this.keyUrlMap.containsKey(key)) return false;
+
+        var url = this.keyUrlMap.get(key);
+        var now = Instant.now();
+
+        return !url.val2().isBefore(now);
+    }
+
+    private String regenerateTemporalResourceURL (String key, String bucketName, Duration duration) throws IOException {
+        boolean flag = isAvailableTemporalResourceURL(key);
+
+        if (flag) return this.keyUrlMap.get(key).val1();
+
+        String url = generateTemporalResourceURL(key, bucketName, duration);
+        Instant nowPlus = Instant.ofEpochMilli(Instant.now().toEpochMilli() + duration.toMillis());
+
+         this.keyUrlMap.put(key, Tuple.of(url, nowPlus));
+
+         return url;
+    }
+
+    private String generateTemporalResourceURL (String key, String bucketName, Duration duration) throws IOException {
+        try (var presigner = s3signer) {
+            var objReq = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build();
+
+            var presigReq = GetObjectPresignRequest.builder()
+                    .signatureDuration(duration)
+                    .getObjectRequest(objReq)
+                    .build();
+
+            var req = presigner.presignGetObject(presigReq);
+
+            return req.url().toExternalForm();
+        } catch (Exception ex) {
+            throw new IOException("Error al intentar obtener una URL prefirmada para un objeto en S3", ex);
+        }
     }
 }
